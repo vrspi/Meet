@@ -97,15 +97,23 @@
                             <div class="chat-contents">
                                 <div class="chat-content-wrap">
                                     <div class="user-video">
-                                        <img src="~/assets/img/video-call.jpg" alt="">
+                                        <video id="localVideo" autoplay muted playsinline></video>
+                                        <canvas id="videoCanvas" style="position: absolute;left: -9999px;"></canvas>
+
                                     </div>
-                                    <div class="my-video">
+                                    @* <div class="my-video">
                                         <ul>
                                             <li>
                                                 <img src="~/assets/img/user-02.jpg" class="img-fluid" alt="">
                                             </li>
                                         </ul>
+                                    </div> *@
+                                    <div class="my-video" id="otherVideos">
+                                        <ul id="videoList">
+                                            <!-- Dynamic video elements will be appended here for other users' streams -->
+                                        </ul>
                                     </div>
+
                                 </div>
                             </div>
                             <div class="chat-footer">
@@ -652,11 +660,91 @@
     </div>
     <div class="sidebar-overlay" data-reff=""></div>
     <script src="~/assets/js/jquery-3.2.1.min.js"></script>
-	<script src="~/assets/js/popper.min.js"></script>
+    <script src="~/assets/js/popper.min.js"></script>
     <script src="~/assets/js/bootstrap.min.js"></script>
     <script src="~/assets/js/jquery.slimscroll.js"></script>
     <script src="~/assets/js/app.js"></script>
 
+    <script>
+        var clientId = 'client_' + Date.now();  // Unique client ID based on timestamp
+        var socket = new WebSocket('wss://localhost:7004/ws');
 
+        document.addEventListener("DOMContentLoaded", function () {
+            const video = document.getElementById('localVideo');
+
+            if (!video) {
+                console.error('Local video element not found!');
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                    sendVideoData(stream);
+                })
+                .catch(error => {
+                    console.error('Error accessing the webcam', error);
+                });
+
+            function sendVideoData(stream) {
+                const offscreenCanvas = document.createElement('canvas');
+                const offscreenCtx = offscreenCanvas.getContext('2d');
+                const offscreenVideo = document.createElement('video');
+                offscreenVideo.srcObject = stream;
+                offscreenVideo.play();
+
+                offscreenVideo.onloadedmetadata = function () {
+                    offscreenCanvas.width = offscreenVideo.videoWidth;
+                    offscreenCanvas.height = offscreenVideo.videoHeight;
+                };
+
+                setInterval(() => {
+                    offscreenCtx.drawImage(offscreenVideo, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                    offscreenCanvas.toBlob(blob => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const data = reader.result;
+                                console.log("Sending binary data to server");
+                                socket.send(data);
+                            };
+                            reader.readAsArrayBuffer(blob);
+                        }
+                    }, 'image/jpeg');
+                }, 100);
+            }
+        });
+
+        socket.onopen = function (event) {
+            console.log("WebSocket is open now.");
+        };
+
+        socket.onmessage = function (event) {
+            console.log("Received binary data from server");
+            const url = URL.createObjectURL(new Blob([event.data], { type: 'image/jpeg' }));
+            displayOtherUsersVideo(url);
+        };
+
+        function displayOtherUsersVideo(url) {
+            const videoList = document.getElementById('videoList');
+            const li = document.createElement('li');
+            const video = document.createElement('video');
+            video.src = url;
+            video.autoplay = true;
+            video.playsinline = true;
+            video.controls = true;
+            li.appendChild(video);
+            videoList.appendChild(li);
+            console.log("Added new video to the list.");
+        }
+
+        socket.onerror = function (event) {
+            console.error("WebSocket error observed:", event);
+        };
+
+        socket.onclose = function (event) {
+            console.log("WebSocket is closed now.");
+        };
+    </script>
 </body>
 </html>

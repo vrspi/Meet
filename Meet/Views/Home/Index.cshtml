@@ -5,6 +5,11 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome to MyMeetAppMVC</h1>
-    <p>Click below to start a meeting.</p>
-    <a class="btn btn-primary" asp-action="Meeting">Start Meet</a>
+    <p>Enter your name and click below to start a meeting.</p>
+    <form method="post" asp-action="Meeting">
+        <div class="form-group">
+            <input type="text" class="form-control" name="userName" placeholder="Enter your name" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Start Meet</button>
+    </form>
 </div>

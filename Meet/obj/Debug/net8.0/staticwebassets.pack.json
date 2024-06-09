@@ -581,6 +581,30 @@
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
     },
     {
+      "Id": "D:\\ASP-EHEIO\\Meet\\Meet\\wwwroot\\uploads\\0bd19df1-15b7-40de-8d4d-f19a621ec6f4.wav",
+      "PackagePath": "staticwebassets\\uploads\\0bd19df1-15b7-40de-8d4d-f19a621ec6f4.wav"
+    },
+    {
+      "Id": "D:\\ASP-EHEIO\\Meet\\Meet\\wwwroot\\uploads\\1aa3d069-9169-41f8-8714-794eca9be1f1.wav",
+      "PackagePath": "staticwebassets\\uploads\\1aa3d069-9169-41f8-8714-794eca9be1f1.wav"
+    },
+    {
+      "Id": "D:\\ASP-EHEIO\\Meet\\Meet\\wwwroot\\uploads\\3a1c0a7a-a495-48bb-8450-87d1ee13743a.wav",
+      "PackagePath": "staticwebassets\\uploads\\3a1c0a7a-a495-48bb-8450-87d1ee13743a.wav"
+    },
+    {
+      "Id": "D:\\ASP-EHEIO\\Meet\\Meet\\wwwroot\\uploads\\77038054-cced-43f9-987b-8dde312a4708.wav",
+      "PackagePath": "staticwebassets\\uploads\\77038054-cced-43f9-987b-8dde312a4708.wav"
+    },
+    {
+      "Id": "D:\\ASP-EHEIO\\Meet\\Meet\\wwwroot\\uploads\\8d67cd23-c4c2-4022-a5fb-20aae2a91dec.wav",
+      "PackagePath": "staticwebassets\\uploads\\8d67cd23-c4c2-4022-a5fb-20aae2a91dec.wav"
+    },
+    {
+      "Id": "D:\\ASP-EHEIO\\Meet\\Meet\\wwwroot\\uploads\\b0256e39-8fb8-4627-9fb3-da5b263229a8.wav",
+      "PackagePath": "staticwebassets\\uploads\\b0256e39-8fb8-4627-9fb3-da5b263229a8.wav"
+    },
+    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Meet.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

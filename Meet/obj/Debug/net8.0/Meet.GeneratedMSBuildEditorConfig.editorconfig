@@ -26,6 +26,14 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes =
 build_property.MSBuildProjectDirectory = D:\ASP-EHEIO\Meet\Meet
 build_property._RazorSourceGeneratorDebug = 
 
+[D:/ASP-EHEIO/Meet/Meet/Views/Chat/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2hhdFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/ASP-EHEIO/Meet/Meet/Views/Chat/SignIn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2hhdFxTaWduSW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/ASP-EHEIO/Meet/Meet/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

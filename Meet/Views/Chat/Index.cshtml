@@ -1,0 +1,246 @@
+﻿@{
+    ViewData["Title"] = "Chat";
+}
+
+<div class="row mt-5">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h3>Online Users</h3>
+            </div>
+            <div class="card-body">
+                <ul id="usersList" class="list-group">
+                    <!-- Online users will be appended here by JavaScript -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2>Chat</h2>
+                <button id="toggleWhiteboardButton" class="btn btn-secondary">Toggle Whiteboard</button>
+            </div>
+            <div class="card-body d-flex flex-column" style="height: 500px;">
+                <div id="chat-panel" class="flex-grow-1 overflow-auto mb-3">
+                    <ul id="messagesList" class="list-group">
+                        <!-- Messages will be appended here by JavaScript -->
+                    </ul>
+                </div>
+                <form id="sendMessageForm" class="input-group">
+                    <input type="text" id="message" name="message" class="form-control" placeholder="Enter message" required />
+                    <div class="input-group-append">
+                        <button type="button" id="recordAudioButton" class="btn btn-secondary">Record</button>
+                        <button type="submit" id="sendMessageButton" class="btn btn-primary">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="whiteboardContainer" style="display: none;">
+    <div class="card mt-5">
+        <div class="card-header text-center">
+            <h2>Real-time Whiteboard</h2>
+        </div>
+        <div class="card-body">
+            <canvas id="whiteboard" width="800" height="600" style="border:1px solid #000000;"></canvas>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var lastMessageTime = 0;
+            var mediaRecorder;
+            var audioChunks = [];
+            var socketUrl = "wss://localhost:7004/whiteboard"; // Use ws for non-HTTPS connections
+            var socket = new WebSocket(socketUrl);
+            var canvas = document.getElementById('whiteboard');
+            var context = canvas ? canvas.getContext('2d') : null;
+            var drawing = false;
+
+            $('#toggleWhiteboardButton').click(function () {
+                $('#whiteboardContainer').toggle();
+            });
+
+            socket.onopen = function () {
+                console.log('WebSocket connection established');
+            };
+
+            socket.onclose = function (event) {
+                console.log('WebSocket connection closed', event);
+            };
+
+            socket.onerror = function (error) {
+                console.error('WebSocket error:', error);
+            };
+
+            socket.onmessage = function (event) {
+                console.log(event.data);
+
+                var data = JSON.parse(event.data);
+                if (data.type === 'draw' && context) {
+                    context.beginPath();
+                    context.moveTo(data.prevX, data.prevY);
+                    context.lineTo(data.x, data.y);
+                    context.stroke();
+                }
+            };
+
+            function sendDrawingData(prevX, prevY, x, y) {
+                if (socket.readyState === WebSocket.OPEN) {
+                    var data = {
+                        type: 'draw',
+                        prevX: prevX,
+                        prevY: prevY,
+                        x: x,
+                        y: y
+                    };
+                    socket.send(JSON.stringify(data));
+                }
+            }
+
+            if (canvas) {
+                var prevX, prevY;
+
+                canvas.addEventListener('mousedown', function (event) {
+                    drawing = true;
+                    prevX = event.offsetX;
+                    prevY = event.offsetY;
+                });
+
+                canvas.addEventListener('mousemove', function (event) {
+                    if (drawing) {
+                        var x = event.offsetX;
+                        var y = event.offsetY;
+                        context.beginPath();
+                        context.moveTo(prevX, prevY);
+                        context.lineTo(x, y);
+                        context.stroke();
+                        sendDrawingData(prevX, prevY, x, y);
+                        prevX = x;
+                        prevY = y;
+                    }
+                });
+
+                canvas.addEventListener('mouseup', function () {
+                    drawing = false;
+                });
+
+                canvas.addEventListener('mouseout', function () {
+                    drawing = false;
+                });
+            }
+
+            function loadMessages() {
+                $.ajax({
+                    url: '@Url.Action("GetMessages")',
+                    method: 'GET',
+                    success: function (data) {
+                        var messagesList = $('#messagesList');
+                        data.forEach(function (message) {
+                            var messageTime = new Date(message.timestamp).getTime();
+                            if (messageTime > lastMessageTime) {
+                                if (message.audioUrl) {
+                                    messagesList.append('<li class="list-group-item"><strong>' + message.username + ':</strong> <audio controls src="' + message.audioUrl + '"></audio></li>');
+                                } else {
+                                    messagesList.append('<li class="list-group-item"><strong>' + message.username + ':</strong> ' + message.message + '</li>');
+                                }
+                                lastMessageTime = messageTime;
+                            }
+                        });
+                        var chatPanel = document.getElementById('chat-panel');
+                        chatPanel.scrollTop = chatPanel.scrollHeight;
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to load messages:", error);
+                    }
+                });
+            }
+
+            function loadUsers() {
+                $.ajax({
+                    url: '@Url.Action("GetOnlineUsers")',
+                    method: 'GET',
+                    success: function (data) {
+                        var usersList = $('#usersList');
+                        usersList.empty();
+                        data.forEach(function (user) {
+                            usersList.append('<li class="list-group-item">' + user + '</li>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to load users:", error);
+                    }
+                });
+            }
+
+            $('#sendMessageForm').off('submit').on('submit', function (event) {
+                event.preventDefault();
+                var message = $('#message').val();
+                var sendMessageButton = $('#sendMessageButton');
+                sendMessageButton.prop('disabled', true);
+                $.ajax({
+                    url: '@Url.Action("SendMessage")',
+                    method: 'POST',
+                    data: { message: message },
+                    success: function () {
+                        $('#message').val('');
+                        loadMessages();
+                        sendMessageButton.prop('disabled', false);
+                    },
+                    error: function () {
+                        sendMessageButton.prop('disabled', false);
+                    }
+                });
+            });
+
+            $('#recordAudioButton').click(function () {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                    $('#recordAudioButton').text('Record');
+                } else {
+                    navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(function (stream) {
+                            mediaRecorder = new MediaRecorder(stream);
+                            mediaRecorder.start();
+                            $('#recordAudioButton').text('Stop');
+                            mediaRecorder.ondataavailable = function (event) {
+                                audioChunks.push(event.data);
+                            };
+                            mediaRecorder.onstop = function () {
+                                var audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                                audioChunks = [];
+                                var formData = new FormData();
+                                formData.append('audio', audioBlob);
+                                $.ajax({
+                                    url: '@Url.Action("SendAudioMessage")',
+                                    method: 'POST',
+                                    data: formData,
+                                    processData: false,
+                                    contentType: false,
+                                    success: function () {
+                                        loadMessages();
+                                    },
+                                    error: function (xhr, status, error) {
+                                        console.error("Failed to send audio message:", error);
+                                    }
+                                });
+                            };
+                        })
+                        .catch(function (error) {
+                            console.error("Failed to get user media:", error);
+                        });
+                }
+            });
+
+            setInterval(loadMessages, 1000); // Refresh messages every second
+            setInterval(loadUsers, 5000); // Refresh users every 5 seconds
+            loadMessages();
+            loadUsers();
+        });
+    </script>
+}
